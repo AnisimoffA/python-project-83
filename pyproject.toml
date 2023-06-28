@@ -4,13 +4,14 @@ version = "0.1.0"
 description = ""
 authors = ["Anisimoff <happyprooo@gmail.com>"]
 readme = "README.md"
-packages = [{include = "python-project-83"}]
+packages = [
+  { include = "page_analyzer" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 flask = "^2.3.2"
 pytest = "^7.4.0"
-flake8 = "^6.0.0"
 
 
 [build-system]
