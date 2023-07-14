@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash # NOQA E501
 from datetime import date
-from validator import url_validator, url_normalize
+from page_analyzer.validator import url_validator, url_normalize
 import psycopg2
 import os
 
