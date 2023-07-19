@@ -1,5 +1,5 @@
 from validators import url
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 
 
 def url_validator(URL):
@@ -9,4 +9,5 @@ def url_validator(URL):
 
 
 def url_normalize(URL):
-    return urlparse(URL)
+    splited_url = urlsplit(URL)
+    return splited_url.scheme + "://" + splited_url.netloc

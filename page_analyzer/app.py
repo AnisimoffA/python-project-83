@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash # NOQA E501
 from datetime import date
-from page_analyzer.validator import url_validator, url_normalize
+from validator import url_validator, url_normalize
 import psycopg2
 import os
+import requests
+from url_analyzer import url_analyze
 
 
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -20,10 +22,23 @@ try:
 
     with connection.cursor() as cursor:
         cursor.execute(
-            '''CREATE TABLE urls (
+            '''DROP TABLE IF EXISTS urls;
+
+            DROP TABLE IF EXISTS url_checks;
+
+            CREATE TABLE urls (
                     id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
                     name varchar(255) UNIQUE,
-                    created_at date);'''
+                    created_at date);
+                    
+            CREATE TABLE url_checks (
+                    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                    url_id int,
+                    status_code int,
+                    h1 varchar(255),
+                    title varchar(255),
+                    description varchar(255),
+                    created_at date)'''
         )
         print('[INFO]Запрос отработан')
 
@@ -46,6 +61,7 @@ def main_page():
     if request.method == "POST":
         URL = request.form['url']
         if url_validator(URL):
+            URL = url_normalize(URL)
             try:
                 connection = connect_db()
                 connection.autocommit = True
@@ -58,15 +74,16 @@ def main_page():
 
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        '''SELECT * FROM urls ORDER BY id DESC LIMIT 1;'''
+                        '''SELECT id FROM urls ORDER BY id DESC LIMIT 1;'''
                     )
 
-                    session['url_id'], session['url_name'], session['url_date'] = cursor.fetchone() # NOQA E501
+                    id = cursor.fetchone()[0] # NOQA E501
+                    print("id ---------------", id)
                     print('[INFO]Данные выбраны')
 
                 session['flash_message'] = ('Страница успешно добавлена', 'success') # NOQA E501
                 parsed_url = url_normalize(URL) # NOQA 
-                return redirect(url_for('link_page', id=session['url_id']))
+                return redirect(url_for('link_page', id=id))
 
             except Exception:
                 with connection.cursor() as cursor:
@@ -74,8 +91,8 @@ def main_page():
                         f'''SELECT id FROM urls WHERE name = '{URL}';'''
                     )
                     session['flash_message'] = ('Страница уже существует', 'info') # NOQA E501
-                    session['url_id'] = cursor.fetchone()[0]
-                    return redirect(url_for('link_page', id=session['url_id'])) # NOQA E501
+                    id = cursor.fetchone()[0]
+                    return redirect(url_for('link_page', id=id)) # NOQA E501
 
             finally:
                 if connection:
@@ -97,10 +114,11 @@ def list_page():
 
         with connection.cursor() as cursor:
             cursor.execute(
-                '''SELECT * FROM urls;'''
+                '''SELECT DISTINCT ON (urls.id) urls.id, name, url_checks.created_at, status_code FROM urls LEFT JOIN url_checks ON urls.id = url_checks.id ORDER BY id DESC;'''
             )
 
             data = cursor.fetchall()
+            print(data)
 
     except Exception as Ex:
         print('[INFO]Ошибка: ', Ex)
@@ -111,7 +129,7 @@ def list_page():
     return render_template('list_of_urls.html', data=data)
 
 
-@app.route('/<id>')
+@app.route('/urls/<id>')
 def link_page(id):
     if session:
         flash(session['flash_message'][0], category=session['flash_message'][1])
@@ -124,10 +142,16 @@ def link_page(id):
             cursor.execute(
                 f'''SELECT * FROM urls WHERE id = '{id}';'''
             )
+            data_about_url = cursor.fetchall() # NOQA E501
 
-            session['url_id'], session['url_name'], session['url_date'] = cursor.fetchone() # NOQA E501
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f'''SELECT id, status_code, h1, title, description, created_at FROM url_checks WHERE url_id = '{id}';'''
+            )
+            data = cursor.fetchall()
 
             print('[INFO]Данные выбраны')
+
     except Exception as Ex:
         print('[INFO]Ошибка: ', Ex)
     finally:
@@ -136,10 +160,44 @@ def link_page(id):
             print('[INFO]Соединение закрыто')
 
     return render_template('link_page.html',
-                           url_id=session['url_id'],
-                           url_name=session['url_name'],
-                           url_date=session['url_date'])
+                           data_about_url=data_about_url,
+                           id=id,
+                           data=data)
 
 
+@app.post('/urls/<id>/check')
+def url_check(id):
+    try:
+        connection = connect_db()
+        connection.autocommit = True
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                        f'''SELECT name FROM urls WHERE id = '{id}';''' # NOQA E501
+            )
+            
+            name = cursor.fetchone()[0]
+            request = requests.get(name)
+            if request.status_code == 200:
+                status_code, h1, title, description = url_analyze(name)
+                cursor.execute(
+                        f'''INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) VALUES ('{id}', '{status_code}', '{h1}', '{title}', '{description}', '{date.today()}');''' # NOQA E501
+                )
+            else:
+                session['flash_message'] = ('Произошла ошибка при проверке', 'danger')
+
+    except Exception as Ex:
+        session['flash_message'] = ('Произошла ошибка при проверке', 'danger')
+        print('[INFO]Ошибка: ', Ex)
+    finally:
+        if connection:
+            connection.close()
+            print('[INFO]Соединение закрыто')
+
+    return redirect(url_for('link_page', id=id))
+
+@app.route('/jopa')
+def jopa():
+    return render_template("page_header.html")
 if __name__ == "__main__":
     app.run(debug=True)
