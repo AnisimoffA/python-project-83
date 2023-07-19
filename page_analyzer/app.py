@@ -5,9 +5,15 @@ import psycopg2
 import os
 import requests
 from page_analyzer.url_analyzer import url_analyze
+from dotenv import load_dotenv
 
 
+load_dotenv()
 DATABASE_URL = os.getenv('DATABASE_URL')
+SECRET_KEY = os.getenv('SECRET_KEY')
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = SECRET_KEY
 # ----------------database info opened------------------
 
 
@@ -48,10 +54,6 @@ finally:
     if connection:
         connection.close()
         print('[INFO]Соединение закрыто')
-
-# ----------------database info closed------------------
-app = Flask(__name__)
-app.config['SECRET_KEY'] = '3G23G#$%VHH>&<.4U,83NKJ'
 
 
 @app.route('/', methods=['POST', 'GET'])
