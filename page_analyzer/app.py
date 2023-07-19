@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash # NOQA E501
 from datetime import date
-from validator import url_validator, url_normalize
+from page_analyzer.validator import url_validator, url_normalize
 import psycopg2
 import os
 import requests
-from url_analyzer import url_analyze
+from page_analyzer.url_analyzer import url_analyze
 
 
 DATABASE_URL = os.getenv('DATABASE_URL')
@@ -179,6 +179,7 @@ def url_check(id):
             name = cursor.fetchone()[0]
             request = requests.get(name)
             if request.status_code == 200:
+                session['flash_message'] = ('Страница успешно проверена', 'success')
                 status_code, h1, title, description = url_analyze(name)
                 cursor.execute(
                         f'''INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) VALUES ('{id}', '{status_code}', '{h1}', '{title}', '{description}', '{date.today()}');''' # NOQA E501
