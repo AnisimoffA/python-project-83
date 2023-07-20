@@ -1,5 +1,5 @@
 from validators import url
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import urlsplit
 
 
 def url_validator(URL):

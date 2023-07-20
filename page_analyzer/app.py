@@ -82,7 +82,10 @@ def list_page():
 
         with connection.cursor() as cursor:
             cursor.execute(
-                '''SELECT DISTINCT ON (urls.id) urls.id, name, url_checks.created_at, status_code FROM urls LEFT JOIN url_checks ON urls.id = url_checks.id ORDER BY id DESC;'''
+                '''SELECT DISTINCT ON (urls.id) urls.id, name,
+                url_checks.created_at, status_code FROM urls
+                LEFT JOIN url_checks ON urls.id = url_checks.id
+                ORDER BY id DESC;'''
             )
 
             data = cursor.fetchall()
@@ -114,7 +117,8 @@ def link_page(id):
 
         with connection.cursor() as cursor:
             cursor.execute(
-                f'''SELECT id, status_code, h1, title, description, created_at FROM url_checks WHERE url_id = '{id}';'''
+                f'''SELECT id, status_code, h1, title, description,
+                created_at FROM url_checks WHERE url_id = '{id}';'''
             )
             data = cursor.fetchall()
 
@@ -143,17 +147,21 @@ def url_check(id):
             cursor.execute(
                         f'''SELECT name FROM urls WHERE id = '{id}';''' # NOQA E501
             )
-            
+
             name = cursor.fetchone()[0]
             request = requests.get(name)
             if request.status_code == 200:
-                session['flash_message'] = ('Страница успешно проверена', 'success')
+                session['flash_message'] = ('Страница успешно проверена', 'success') # NOQA E501
                 status_code, h1, title, description = url_analyze(name)
                 cursor.execute(
-                        f'''INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at) VALUES ('{id}', '{status_code}', '{h1}', '{title}', '{description}', '{date.today()}');''' # NOQA E501
+                    f'''INSERT INTO url_checks (url_id,
+                    status_code, h1, title, description,
+                    created_at) VALUES ('{id}', '{status_code}',
+                    '{h1}', '{title}', '{description}',
+                    '{date.today()}');'''
                 )
             else:
-                session['flash_message'] = ('Произошла ошибка при проверке', 'danger')
+                session['flash_message'] = ('Произошла ошибка при проверке', 'danger') # NOQA E501
 
     except Exception as Ex:
         session['flash_message'] = ('Произошла ошибка при проверке', 'danger')
@@ -165,9 +173,11 @@ def url_check(id):
 
     return redirect(url_for('link_page', id=id))
 
+
 @app.errorhandler(404)
 def error_page(e):
     return render_template("error_page.html"), 404
+
 
 if __name__ == "__main__":
     app.run(debug=True)
