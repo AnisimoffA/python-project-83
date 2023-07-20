@@ -165,8 +165,9 @@ def url_check(id):
 
     return redirect(url_for('link_page', id=id))
 
-@app.route('/jopa')
-def jopa():
-    return render_template("page_header.html")
+@app.errorhandler(404)
+def error_page(e):
+    return render_template("error_page.html"), 404
+
 if __name__ == "__main__":
     app.run(debug=True)
