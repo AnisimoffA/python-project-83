@@ -22,40 +22,6 @@ def connect_db():
     return conn
 
 
-try:
-    connection = connect_db()
-    connection.autocommit = True
-
-    with connection.cursor() as cursor:
-        cursor.execute(
-            '''DROP TABLE IF EXISTS urls;
-
-            DROP TABLE IF EXISTS url_checks;
-
-            CREATE TABLE urls (
-                    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                    name varchar(255) UNIQUE,
-                    created_at date);
-                    
-            CREATE TABLE url_checks (
-                    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-                    url_id int,
-                    status_code int,
-                    h1 varchar(255),
-                    title varchar(255),
-                    description varchar(255),
-                    created_at date)'''
-        )
-        print('[INFO]Запрос отработан')
-
-except Exception as Ex:
-    print('[INFO]Ошибка: ', Ex)
-finally:
-    if connection:
-        connection.close()
-        print('[INFO]Соединение закрыто')
-
-
 @app.route('/', methods=['POST', 'GET'])
 def main_page():
     session.clear()
