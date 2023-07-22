@@ -70,7 +70,7 @@ def main_page():
 
         else:
             flash('Некорректный URL', category="danger")
-            return render_template('index.html')
+            return render_template('index.html'), 500
 
     return render_template('index.html')
 
@@ -160,10 +160,12 @@ def url_check(id):
                 )
             else:
                 session['flash_message'] = ('Произошла ошибка при проверке', 'danger') # NOQA E501
+                redirect(url_for('link_page', id=id)), 500
 
     except Exception as Ex:
         session['flash_message'] = ('Произошла ошибка при проверке', 'danger')
         print('[INFO]Ошибка: ', Ex)
+        redirect(url_for('link_page', id=id)), 500
     finally:
         if connection:
             connection.close()
