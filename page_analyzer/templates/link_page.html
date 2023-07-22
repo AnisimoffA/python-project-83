@@ -46,9 +46,13 @@
         <tbody>
             {% for row in data %}
             <tr>
-            {% for col_value in row %}
-            <td>{{ col_value }}</td>
-            {% endfor %}
+              {% for col_value in row %}
+                {% if col_value == None or col_value == "None" %}
+                    <td></td>
+                {% else %}
+                    <td>{{ col_value }}</td>
+                {% endif %}
+              {% endfor %}
             </tr>
             {% endfor %}
         </tbody>

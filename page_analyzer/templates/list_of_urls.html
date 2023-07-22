@@ -19,7 +19,11 @@
                         {% for row in data %}
                         <tr>
                           {% for col_value in row %}
-                          <td>{{ col_value }}</td>
+                            {% if col_value != None %}
+                                <td>{{ col_value }} </td>
+                            {% else %}
+                                <td></td>
+                            {% endif %}
                           {% endfor %}
                         </tr>
                         {% endfor %}
