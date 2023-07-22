@@ -35,13 +35,15 @@ def main_page():
                 connection = connect_db()
                 connection.autocommit = True
 
-                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
+                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
                     cursor.execute(
-                        f'''INSERT INTO urls (name, created_at) VALUES (%s, %s)''', (URL, date.today()) # NOQA E501
+                        '''INSERT INTO urls (name, created_at)
+                        VALUES (%s, %s)''',
+                        (URL, date.today())
                     )
                     print('[INFO]Запись добавлена')
 
-                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
+                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
                     cursor.execute(
                         '''SELECT id FROM urls ORDER BY id DESC LIMIT 1;'''
                     )
@@ -53,9 +55,9 @@ def main_page():
                 return redirect(url_for('link_page', id=id))
 
             except Exception:
-                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
+                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
                     cursor.execute(
-                        f'''SELECT id FROM urls WHERE name = %s;''', (URL,)
+                        '''SELECT id FROM urls WHERE name = %s;''', (URL,)
                     )
                     session['flash_message'] = ('Страница уже существует', 'info') # NOQA E501
                     id = cursor.fetchone().id
@@ -109,13 +111,13 @@ def link_page(id):
 
         with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
             cursor.execute(
-                f'''SELECT * FROM urls WHERE id = %s;''', (id,)
+                '''SELECT * FROM urls WHERE id = %s;''', (id,)
             )
             data_about_url = cursor.fetchall() # NOQA E501
 #######
             cursor.execute(
-                f'''SELECT id, status_code, h1, title, description,
-                created_at FROM url_checks WHERE url_id = %s 
+                '''SELECT id, status_code, h1, title, description,
+                created_at FROM url_checks WHERE url_id = %s
                 ORDER BY id DESC;''', (id,)
             )
             data = cursor.fetchall()
@@ -142,7 +144,7 @@ def url_check(id):
 
         with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
             cursor.execute(
-                        f'''SELECT name FROM urls WHERE id = %s;''', (id,) # NOQA E501
+                        '''SELECT name FROM urls WHERE id = %s;''', (id,) # NOQA E501
             )
 
             name = cursor.fetchone().name
@@ -151,7 +153,7 @@ def url_check(id):
                 session['flash_message'] = ('Страница успешно проверена', 'success') # NOQA E501
                 status_code, h1, title, description = url_analyze(name)
                 cursor.execute(
-                    f'''INSERT INTO url_checks (url_id,
+                    '''INSERT INTO url_checks (url_id,
                     status_code, h1, title, description,
                     created_at) VALUES (%s, %s, %s, %s, %s, %s)''',
                     (id, status_code, h1, title, description, date.today())
