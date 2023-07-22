@@ -12,7 +12,7 @@ CREATE TABLE urls (
     url_id int,
     status_code int,
     h1 varchar(255),
-    title varchar(255),
-    description varchar(255),
+    title varchar,
+    description varchar,
     created_at date
  );
