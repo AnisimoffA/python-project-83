@@ -18,13 +18,10 @@
                     <tbody>
                         {% for row in data %}
                         <tr>
-                          {% for col_value in row %}
-                            {% if col_value != None %}
-                                <td>{{ col_value }} </td>
-                            {% else %}
-                                <td></td>
-                            {% endif %}
-                          {% endfor %}
+                            <td>{{ row.id }}</td>
+                            <td><a href="{{ url_for("link_page", id=row.id) }}">{{ row.name }}</a></td>
+                            <td>{{ row.created_at if row.created_at != None else ""}}</td>
+                            <td>{{ row.status_code if row.status_code != None else ""}}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

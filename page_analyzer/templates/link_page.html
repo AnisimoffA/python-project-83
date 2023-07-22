@@ -11,18 +11,20 @@
 <div class="table-responsive">
     <table class="table table-bordered table-hover text-nowrap" datatest="url">
         <tbody>
+            {% for row in data_about_url %}
             <tr>
                 <td>ID</td>
-                <td>{{ data_about_url[0][0] }}</td>
+                <td>{{ row.id }}</td>
             </tr>
             <tr>
                 <td>Имя</td>
-                <td>{{ data_about_url[0][1] }}</td>
+                <td>{{ row.name }}</td>
             </tr>
             <tr>
                 <td>Дата создания</td>
-                <td>{{ data_about_url[0][2] }}</td>
+                <td>{{ row.created_at }}</td>
             </tr>
+            {% endfor %}
         </tbody>
 
     </table>
@@ -46,14 +48,12 @@
         <tbody>
             {% for row in data %}
             <tr>
-              {% for col_value in row %}
-                {% if col_value == None or col_value == "None" %}
-                    <td></td>
-                {% else %}
-                    <td>{{ col_value }}</td>
-                {% endif %}
-              {% endfor %}
-            </tr>
+              <td>{{ row.id }}</td>
+              <td>{{ row.status_code }}</td>
+              <td>{{ "" if row.h1 == None or row.h1 == "None" else row.h1 }}</td>
+              <td>{{ "" if row.title == None or row.title == "None" else row.title }}</td>
+              <td>{{ "" if row.description == None or row.description == "None" else row.description }}</td>
+              <td>{{ row.created_at }}</td>
             {% endfor %}
         </tbody>
     </table>

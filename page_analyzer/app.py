@@ -6,6 +6,7 @@ import os
 import requests
 from page_analyzer.url_analyzer import url_analyze
 from dotenv import load_dotenv
+from psycopg2.extras import NamedTupleCursor
 
 
 load_dotenv()
@@ -34,32 +35,30 @@ def main_page():
                 connection = connect_db()
                 connection.autocommit = True
 
-                with connection.cursor() as cursor:
+                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
                     cursor.execute(
-                        f'''INSERT INTO urls (name, created_at) VALUES ('{URL}', '{date.today()}');''' # NOQA E501
+                        f'''INSERT INTO urls (name, created_at) VALUES (%s, %s)''', (URL, date.today()) # NOQA E501
                     )
                     print('[INFO]Запись добавлена')
 
-                with connection.cursor() as cursor:
+                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
                     cursor.execute(
                         '''SELECT id FROM urls ORDER BY id DESC LIMIT 1;'''
                     )
 
-                    id = cursor.fetchone()[0] # NOQA E501
-                    print("id ---------------", id)
-                    print('[INFO]Данные выбраны')
+                    id = cursor.fetchone().id
 
                 session['flash_message'] = ('Страница успешно добавлена', 'success') # NOQA E501
                 parsed_url = url_normalize(URL) # NOQA 
                 return redirect(url_for('link_page', id=id))
 
             except Exception:
-                with connection.cursor() as cursor:
+                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
                     cursor.execute(
-                        f'''SELECT id FROM urls WHERE name = '{URL}';'''
+                        f'''SELECT id FROM urls WHERE name = %s;''', (URL,)
                     )
                     session['flash_message'] = ('Страница уже существует', 'info') # NOQA E501
-                    id = cursor.fetchone()[0]
+                    id = cursor.fetchone().id
                     return redirect(url_for('link_page', id=id)) # NOQA E501
 
             finally:
@@ -80,7 +79,7 @@ def list_page():
         connection = connect_db()
         connection.autocommit = True
 
-        with connection.cursor() as cursor:
+        with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
             cursor.execute(
                 '''SELECT DISTINCT ON (urls.id) urls.id, name,
                 url_checks.created_at, status_code FROM urls
@@ -89,7 +88,6 @@ def list_page():
             )
 
             data = cursor.fetchall()
-            print(data)
 
     except Exception as Ex:
         print('[INFO]Ошибка: ', Ex)
@@ -109,19 +107,18 @@ def link_page(id):
         connection = connect_db()
         connection.autocommit = True
 
-        with connection.cursor() as cursor:
+        with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
             cursor.execute(
-                f'''SELECT * FROM urls WHERE id = '{id}';'''
+                f'''SELECT * FROM urls WHERE id = %s;''', (id,)
             )
             data_about_url = cursor.fetchall() # NOQA E501
-
-        with connection.cursor() as cursor:
+#######
             cursor.execute(
                 f'''SELECT id, status_code, h1, title, description,
-                created_at FROM url_checks WHERE url_id = '{id}';'''
+                created_at FROM url_checks WHERE url_id = %s 
+                ORDER BY id DESC;''', (id,)
             )
             data = cursor.fetchall()
-
             print('[INFO]Данные выбраны')
 
     except Exception as Ex:
@@ -143,12 +140,12 @@ def url_check(id):
         connection = connect_db()
         connection.autocommit = True
 
-        with connection.cursor() as cursor:
+        with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
             cursor.execute(
-                        f'''SELECT name FROM urls WHERE id = '{id}';''' # NOQA E501
+                        f'''SELECT name FROM urls WHERE id = %s;''', (id,) # NOQA E501
             )
 
-            name = cursor.fetchone()[0]
+            name = cursor.fetchone().name
             request = requests.get(name)
             if request.status_code == 200:
                 session['flash_message'] = ('Страница успешно проверена', 'success') # NOQA E501
@@ -156,9 +153,8 @@ def url_check(id):
                 cursor.execute(
                     f'''INSERT INTO url_checks (url_id,
                     status_code, h1, title, description,
-                    created_at) VALUES ('{id}', '{status_code}',
-                    '{h1}', '{title}', '{description}',
-                    '{date.today()}');'''
+                    created_at) VALUES (%s, %s, %s, %s, %s, %s)''',
+                    (id, status_code, h1, title, description, date.today())
                 )
             else:
                 session['flash_message'] = ('Произошла ошибка при проверке', 'danger') # NOQA E501
