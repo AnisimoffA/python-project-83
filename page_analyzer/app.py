@@ -23,55 +23,56 @@ def connect_db():
     return conn
 
 
-@app.route('/', methods=['POST', 'GET'])
+@app.route('/', methods=["post", "get"])
 def main_page():
-    session.clear()
-
     if request.method == "POST":
         URL = request.form['url']
-        if url_validator(URL):
-            URL = url_normalize(URL)
-            try:
-                connection = connect_db()
-                connection.autocommit = True
 
-                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
-                    cursor.execute(
-                        '''INSERT INTO urls (name, created_at)
-                        VALUES (%s, %s)''',
-                        (URL, date.today())
-                    )
-                    print('[INFO]Запись добавлена')
-
-                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
-                    cursor.execute(
-                        '''SELECT id FROM urls ORDER BY id DESC LIMIT 1;'''
-                    )
-
-                    id = cursor.fetchone().id
-
-                session['flash_message'] = ('Страница успешно добавлена', 'success') # NOQA E501
-                return redirect(url_for('link_page', id=id))
-
-            except Exception:
-                with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
-                    cursor.execute(
-                        '''SELECT id FROM urls WHERE name = %s;''', (URL,)
-                    )
-                    session['flash_message'] = ('Страница уже существует', 'info') # NOQA E501
-                    id = cursor.fetchone().id
-                    return redirect(url_for('link_page', id=id)) # NOQA E501
-
-            finally:
-                if connection:
-                    connection.close()
-                    print('[INFO]Соединени закрыто')
-
-        else:
+        if not url_validator(URL):
             flash('Некорректный URL', category="danger")
             return render_template('index.html'), 422
 
+        URL = url_normalize(URL)
+        try:
+            connection = connect_db()
+            connection.autocommit = True
+            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
+                cursor.execute(
+                    '''SELECT id FROM urls WHERE name = %s;''', (URL,)
+                )
+                id = cursor.fetchone()
+                print("aaaaaa", id)
+                if id:
+                    flash('Страница уже существует', 'info')
+                    return redirect(url_for('link_page', id=id.id))
+                    
+            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
+                cursor.execute(
+                    '''INSERT INTO urls (name, created_at)
+                    VALUES (%s, %s);''',
+                    (URL, date.today())
+                )
+                print('[INFO]Запись добавлена')
+
+            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
+                cursor.execute(
+                    '''SELECT id FROM urls ORDER BY id DESC LIMIT 1;'''
+                )
+
+                id = cursor.fetchone().id
+
+            flash('Страница успешно добавлена', 'success') # NOQA E501
+            return redirect(url_for('link_page', id=id))
+
+        except Exception as Ex:
+            print('[INFO]Ошибка: ', Ex)
+        finally:
+            if connection:
+                connection.close()
+                print('[INFO]Соединени закрыто')
     return render_template('index.html')
+
+
 
 
 @app.route('/urls')
@@ -101,9 +102,6 @@ def list_page():
 
 @app.route('/urls/<id>')
 def link_page(id):
-    if session:
-        flash(session['flash_message'][0], category=session['flash_message'][1])
-
     try:
         connection = connect_db()
         connection.autocommit = True
@@ -121,6 +119,11 @@ def link_page(id):
             )
             data = cursor.fetchall()
             print('[INFO]Данные выбраны')
+            
+            return render_template('link_page.html',
+                           data_about_url=data_about_url,
+                           id=id,
+                           data=data)
 
     except Exception as Ex:
         print('[INFO]Ошибка: ', Ex)
@@ -128,11 +131,6 @@ def link_page(id):
         if connection:
             connection.close()
             print('[INFO]Соединение закрыто')
-
-    return render_template('link_page.html',
-                           data_about_url=data_about_url,
-                           id=id,
-                           data=data)
 
 
 @app.post('/urls/<id>/check')
@@ -149,7 +147,7 @@ def url_check(id):
             name = cursor.fetchone().name
             request = requests.get(name)
             if request.status_code == 200:
-                session['flash_message'] = ('Страница успешно проверена', 'success') # NOQA E501
+                flash('Страница успешно проверена', 'success') # NOQA E501
                 status_code, h1, title, description = url_analyze(name)
                 cursor.execute(
                     '''INSERT INTO url_checks (url_id,
@@ -158,11 +156,11 @@ def url_check(id):
                     (id, status_code, h1, title, description, date.today())
                 )
             else:
-                session['flash_message'] = ('Произошла ошибка при проверке', 'danger') # NOQA E501
+                flash('Произошла ошибка при проверке', 'danger') # NOQA E501
                 redirect(url_for('link_page', id=id))
 
     except Exception as Ex:
-        session['flash_message'] = ('Произошла ошибка при проверке', 'danger')
+        flash('Произошла ошибка при проверке', 'danger')
         print('[INFO]Ошибка: ', Ex)
         redirect(url_for('link_page', id=id))
     finally:

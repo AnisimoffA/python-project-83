@@ -2,9 +2,12 @@
 {% block content -%}
 {{ super() }}
 
-{% for category, msg in get_flashed_messages(True) %}
-<div class="alert alert-{{ category }}" role="alert"> {{ msg }} </div>
-{% endfor %}
+{% if get_flashed_messages(with_categories=true) %}
+    {% for category, msg in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ category }}" role="alert"> {{ msg }} </div>
+    {% endfor %}
+{% endif %}
+
 <main class="flex-grow-1">
 <div class="container-lg mt-3">
 <h1>Сайт: {{ data_about_url[0].name }} </h1>

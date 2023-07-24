@@ -2,9 +2,12 @@
 {% block content -%}
 {{ super() }}
 
-{% for msg in get_flashed_messages() %}
-<div class="alert alert-danger" role="alert"> {{ msg }} </div>
-{% endfor %}
+{% if get_flashed_messages(with_categories=true) %}
+    {% for category, msg in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert-{{ category }}" role="alert"> {{ msg }} </div>
+    {% endfor %}
+{% endif %}
+
 <main class="flex-grow-1">
     <div class="container-lg mt-3">
         <h1></h1>
@@ -12,8 +15,8 @@
             <div class="col-12 col-md-10 col-lg-8 mx-auto border rounded-3 bg-light p-5">
                 <h1 class="display-3"> Анализатор страниц </h1>
                 <p class="lead"> Бесплатно проверяйте сайты на SEO-пригодность </p>
-                <form acticlass="d-flex justify-content-center" style="width 18rem;" method="post">        
-                    <input class="form-control form-control-lg" type="text" placeholder="https://www.example.com" name="url" value="" required/>
+                <form action="/urls" method="post" class="d-flex justify-content-center" required>        
+                    <input type="text" name="url" placeholder="https://www.example.com" value class="form-control form-control-lg"/>
                     <input class="btn btn-primary  btn-lg ms-3 px-5 text-uppercase mx-3" type="submit" value="ПРОВЕРИТЬ"/>
                 </form>
             </div>
