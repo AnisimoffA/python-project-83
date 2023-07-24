@@ -5,7 +5,7 @@ import os
 import requests
 from page_analyzer.url_analyzer import url_analyze
 from dotenv import load_dotenv
-from page_analyzer.db import select_many_from_db, select_one_from_db, insert_into_db
+from page_analyzer.db import select_many_from_db, select_one_from_db, insert_into_db # NOQA E501
 
 
 load_dotenv()
@@ -42,20 +42,20 @@ def post_urls():
         return render_template("index.html"), 422
 
     URL = url_normalize(URL)
-    
+
     requirement = 'SELECT id FROM urls WHERE name = %s;'
     id = select_one_from_db(requirement, (URL,))
-    
+
     if id:
         flash('Страница уже существует', 'info')
         return redirect(url_for('link_page', id=id.id))
-    
+
     requirement = 'INSERT INTO urls (name, created_at) VALUES (%s, %s);'
     insert_into_db(requirement, (URL, date.today()))
-    
+
     requirement = 'SELECT id FROM urls ORDER BY id DESC LIMIT 1;'
     id = select_one_from_db(requirement, ()).id
-    
+
     flash('Страница успешно добавлена', 'success') # NOQA E501
     return redirect(url_for('link_page', id=id))
 
@@ -69,37 +69,36 @@ def link_page(id):
                 created_at FROM url_checks WHERE url_id = %s
                 ORDER BY id DESC;'''
     data = select_many_from_db(requirement, (id,))
-    
+
     return render_template('link_page.html',
-                        data_about_url=data_about_url,
-                        id=id,
-                        data=data)
+                           data_about_url=data_about_url,
+                           id=id,
+                           data=data)
 
 
 @app.post('/urls/<id>/check')
 def url_check(id):
     requirement = 'SELECT name FROM urls WHERE id = %s;'
     name = select_one_from_db(requirement, (id,)).name
-    
+
     request = requests.get(name)
-    
+
     if request.status_code == 200:
         flash('Страница успешно проверена', 'success') # NOQA E501
         status_code, h1, title, description = url_analyze(name)
-        
+
         requirement = '''INSERT INTO url_checks (url_id,
             status_code, h1, title, description,
             created_at) VALUES (%s, %s, %s, %s, %s, %s)'''
         insert_into_db(
             requirement,
-            (id, status_code, h1, title, description, date.today())
-            )
+            (id, status_code, h1, title,
+             description, date.today()))
 
         return redirect(url_for('link_page', id=id))
     else:
         flash('Произошла ошибка при проверке', 'danger') # NOQA E501
         return redirect(url_for('link_page', id=id))
-
 
 
 @app.errorhandler(404)

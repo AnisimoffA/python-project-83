@@ -65,5 +65,3 @@ def select_many_from_db(requirement, values):
             connection.close()
             print('[INFO]Соединение закрыто')
             return data
-
-#----------- TEST ZONE ----------
