@@ -51,7 +51,6 @@ def main_page():
                     id = cursor.fetchone().id
 
                 session['flash_message'] = ('Страница успешно добавлена', 'success') # NOQA E501
-                parsed_url = url_normalize(URL) # NOQA 
                 return redirect(url_for('link_page', id=id))
 
             except Exception:
@@ -160,12 +159,12 @@ def url_check(id):
                 )
             else:
                 session['flash_message'] = ('Произошла ошибка при проверке', 'danger') # NOQA E501
-                redirect(url_for('link_page', id=id)), 422
+                redirect(url_for('link_page', id=id))
 
     except Exception as Ex:
         session['flash_message'] = ('Произошла ошибка при проверке', 'danger')
         print('[INFO]Ошибка: ', Ex)
-        redirect(url_for('link_page', id=id)), 422
+        redirect(url_for('link_page', id=id))
     finally:
         if connection:
             connection.close()
