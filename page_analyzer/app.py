@@ -15,7 +15,6 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
-# ----------------database info opened------------------
 
 
 def connect_db():
