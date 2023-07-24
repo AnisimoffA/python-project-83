@@ -35,14 +35,11 @@ def list_page():
 
         with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
             cursor.execute('''
-            SELECT urls.id, urls.name, url_checks.created_at,
-            url_checks.status_code FROM urls
-            LEFT JOIN url_checks ON urls.id = url_checks.url_id
-            WHERE url_checks.url_id IS NULL
-            OR url_checks.id = (SELECT MAX(url_checks.id) FROM url_checks
-            WHERE url_checks.url_id = urls.id)
-            ORDER BY urls.id DESC'''
-            )
+            SELECT urls.id, name, url_checks.created_at, status_code
+            FROM urls LEFT JOIN url_checks ON urls.id = url_checks.url_id
+            WHERE url_checks.id = (SELECT MAX(url_checks.id)
+            FROM url_checks WHERE url_checks.url_id = urls.id)
+            ORDER BY urls.id DESC''')
 
             data = cursor.fetchall()
 
