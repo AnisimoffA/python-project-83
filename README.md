@@ -3,7 +3,7 @@
 ### Hexlet tests and linter status:
 
 [![Actions Status](https://github.com/AnisimoffA/python-project-83/workflows/hexlet-check/badge.svg)](https://github.com/AnisimoffA/python-project-83/actions)
-[![Anisimoff-check](https://github.com/AnisimoffA/python-project-83/actions/workflows/my_personal_actions.yml/badge.svg)](https://github.com/AnisimoffA/python-project-83/actions/workflows/my_personal_actions.yml)
+[![Anisimoff-check](https://github.com/AnisimoffA/python-project-83/actions/workflows/my_personal_action.yml/badge.svg)](https://github.com/AnisimoffA/python-project-83/actions/workflows/my_personal_actions.yml)
 <a href="https://codeclimate.com/github/AnisimoffA/python-project-83/maintainability"><img src="https://api.codeclimate.com/v1/badges/1522939faa10345c6f0d/maintainability" /></a>
 
 ## What is it?
