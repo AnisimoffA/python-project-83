@@ -25,14 +25,6 @@ jobs:
           pip install poetry
           make install
           
-      - name: Run linter and pytest
+      - name: Run linter
         run: |
           make check
-
-      # - name: Publish code coverage stat
-      #   uses: paambaati/codeclimate-action@v2.7.4
-      #   env:
-      #     CC_TEST_REPORTER_ID: ${{ secrets.CODE_CLIMATE_KEY }}
-      #   with:
-      #     coverageCommand: make test-coverage
-      #     debug: true

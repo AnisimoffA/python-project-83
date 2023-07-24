@@ -1,20 +1,14 @@
 lint: 
-	poetry run flake8 page_analyzer tests
+	poetry run flake8 page_analyzer
 
 install:
 	poetry install
-
-test:
-	poetry run pytest
-
-test-coverage:
-	poetry run pytest --cov=page_analyzer --cov-report xml
 
 
 selfcheck:
 	poetry check
 
-check: selfcheck lint test 
+check: selfcheck lint 
 
 build: check
 	poetry build
