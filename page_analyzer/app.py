@@ -23,56 +23,9 @@ def connect_db():
     return conn
 
 
-@app.route('/', methods=["post", "get"])
+@app.route('/')
 def main_page():
-    if request.method == "POST":
-        URL = request.form['url']
-
-        if not url_validator(URL):
-            flash('Некорректный URL', category="danger")
-            return render_template('index.html'), 422
-
-        URL = url_normalize(URL)
-        try:
-            connection = connect_db()
-            connection.autocommit = True
-            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
-                cursor.execute(
-                    '''SELECT id FROM urls WHERE name = %s;''', (URL,)
-                )
-                id = cursor.fetchone()
-                print("aaaaaa", id)
-                if id:
-                    flash('Страница уже существует', 'info')
-                    return redirect(url_for('link_page', id=id.id))
-                    
-            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
-                cursor.execute(
-                    '''INSERT INTO urls (name, created_at)
-                    VALUES (%s, %s);''',
-                    (URL, date.today())
-                )
-                print('[INFO]Запись добавлена')
-
-            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
-                cursor.execute(
-                    '''SELECT id FROM urls ORDER BY id DESC LIMIT 1;'''
-                )
-
-                id = cursor.fetchone().id
-
-            flash('Страница успешно добавлена', 'success') # NOQA E501
-            return redirect(url_for('link_page', id=id))
-
-        except Exception as Ex:
-            print('[INFO]Ошибка: ', Ex)
-        finally:
-            if connection:
-                connection.close()
-                print('[INFO]Соединени закрыто')
     return render_template('index.html')
-
-
 
 
 @app.route('/urls')
@@ -100,6 +53,53 @@ def list_page():
     return render_template('list_of_urls.html', data=data)
 
 
+@app.post('/urls')
+def post_urls():
+    URL = request.form['url']
+
+    if not url_validator(URL):
+        flash('Некорректный URL', category="danger")
+        return render_template("index.html"), 422
+
+    URL = url_normalize(URL)
+    try:
+        connection = connect_db()
+        connection.autocommit = True
+        with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
+            cursor.execute(
+                '''SELECT id FROM urls WHERE name = %s;''', (URL,)
+            )
+            id = cursor.fetchone()
+            if id:
+                flash('Страница уже существует', 'info')
+                return redirect(url_for('link_page', id=id.id))
+
+        with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
+            cursor.execute(
+                '''INSERT INTO urls (name, created_at)
+                VALUES (%s, %s);''',
+                (URL, date.today())
+            )
+            print('[INFO]Запись добавлена')
+
+        with connection.cursor(cursor_factory=NamedTupleCursor) as cursor: # NOQA E501
+            cursor.execute(
+                '''SELECT id FROM urls ORDER BY id DESC LIMIT 1;'''
+            )
+
+            id = cursor.fetchone().id
+
+        flash('Страница успешно добавлена', 'success') # NOQA E501
+        return redirect(url_for('link_page', id=id))
+
+    except Exception as Ex:
+        print('[INFO]Ошибка: ', Ex)
+    finally:
+        if connection:
+            connection.close()
+            print('[INFO]Соединени закрыто')
+
+
 @app.route('/urls/<id>')
 def link_page(id):
     try:
@@ -111,7 +111,7 @@ def link_page(id):
                 '''SELECT * FROM urls WHERE id = %s;''', (id,)
             )
             data_about_url = cursor.fetchall() # NOQA E501
-#######
+
             cursor.execute(
                 '''SELECT id, status_code, h1, title, description,
                 created_at FROM url_checks WHERE url_id = %s
@@ -119,11 +119,11 @@ def link_page(id):
             )
             data = cursor.fetchall()
             print('[INFO]Данные выбраны')
-            
+
             return render_template('link_page.html',
-                           data_about_url=data_about_url,
-                           id=id,
-                           data=data)
+                                   data_about_url=data_about_url,
+                                   id=id,
+                                   data=data)
 
     except Exception as Ex:
         print('[INFO]Ошибка: ', Ex)
