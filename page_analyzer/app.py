@@ -145,7 +145,7 @@ def url_check(id):
 
             name = cursor.fetchone().name
             request = requests.get(name)
-            if request.status_code != 500:
+            if request.status_code == 200:
                 flash('Страница успешно проверена', 'success') # NOQA E501
                 status_code, h1, title, description = url_analyze(name)
                 cursor.execute(
@@ -154,14 +154,13 @@ def url_check(id):
                     created_at) VALUES (%s, %s, %s, %s, %s, %s)''',
                     (id, status_code, h1, title, description, date.today())
                 )
+                redirect(url_for('link_page', id=id))
             else:
                 flash('Произошла ошибка при проверке', 'danger') # NOQA E501
                 redirect(url_for('link_page', id=id))
 
     except Exception as Ex:
-        flash('Произошла ошибка при проверке', 'danger')
         print('[INFO]Ошибка: ', Ex)
-        redirect(url_for('link_page', id=id))
     finally:
         if connection:
             connection.close()
