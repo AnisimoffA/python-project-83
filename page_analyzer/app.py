@@ -142,11 +142,8 @@ def url_check(id):
             cursor.execute(
                         '''SELECT name FROM urls WHERE id = %s;''', (id,) # NOQA E501
             )
-
             name = cursor.fetchone().name
-            request = requests.get(name)
-            if request.status_code == 200:
-                flash('Страница успешно проверена', 'success') # NOQA E501
+            try:
                 status_code, h1, title, description = url_analyze(name)
                 cursor.execute(
                     '''INSERT INTO url_checks (url_id,
@@ -154,7 +151,8 @@ def url_check(id):
                     created_at) VALUES (%s, %s, %s, %s, %s, %s)''',
                     (id, status_code, h1, title, description, date.today())
                 )
-            else:
+                flash('Страница успешно проверена', 'success') # NOQA E501
+            except :
                 flash('Произошла ошибка при проверке', 'danger') # NOQA E501
                 redirect(url_for('link_page', id=id))
 
