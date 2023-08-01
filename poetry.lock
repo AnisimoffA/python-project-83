@@ -232,6 +232,17 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "psycopg2-pool"
+version = "1.1"
+description = "Proper pooling of psycopg2 connections"
+category = "main"
+optional = false
+python-versions = ">= 2.7, != 3.0.*, != 3.1.*, != 3.2.*, != 3.3.*, != 3.4.*"
+
+[package.dependencies]
+psycopg2-binary = "*"
+
+[[package]]
 name = "pycodestyle"
 version = "2.10.0"
 description = "Python style guide checker"
@@ -384,7 +395,7 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "cba7415830dbadfbab8185d398f68c26eaf34c13418f86a03e5e1fc7dab0a83e"
+content-hash = "599803a3c97d46dbbc95af2fa16f1a1b6ee606da878ba49711e336c1ace86d78"
 
 [metadata.files]
 beautifulsoup4 = [
@@ -712,6 +723,10 @@ psycopg2-binary = [
     {file = "psycopg2_binary-2.9.6-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:02c0f3757a4300cf379eb49f543fb7ac527fb00144d39246ee40e1df684ab514"},
     {file = "psycopg2_binary-2.9.6-cp39-cp39-win32.whl", hash = "sha256:c3dba7dab16709a33a847e5cd756767271697041fbe3fe97c215b1fc1f5c9848"},
     {file = "psycopg2_binary-2.9.6-cp39-cp39-win_amd64.whl", hash = "sha256:f6a88f384335bb27812293fdb11ac6aee2ca3f51d3c7820fe03de0a304ab6249"},
+]
+psycopg2-pool = [
+    {file = "psycopg2-pool-1.1.tar.gz", hash = "sha256:de88615c24ddfc7ee314c566976cfed4bbb009211255f2773ea09e5f938ff400"},
+    {file = "psycopg2_pool-1.1-py2.py3-none-any.whl", hash = "sha256:529c4100db56a3522cf680ce8d89e71511e37c7e0b1f120ce0dde0f13c6e5844"},
 ]
 pycodestyle = [
     {file = "pycodestyle-2.10.0-py2.py3-none-any.whl", hash = "sha256:8a4eaf0d0495c7395bdab3589ac2db602797d76207242c17d470186815706610"},
