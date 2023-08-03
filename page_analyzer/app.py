@@ -6,10 +6,31 @@ import requests
 from page_analyzer.url_analyzer import url_analyze
 from dotenv import load_dotenv
 from page_analyzer.db import select_many_from_db, select_one_from_db, insert_into_db # NOQA E501
+import psycopg2
+from psycopg2 import pool # NOQA F401
+from contextlib import contextmanager
 
 
 load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
+DATABASE_URL = os.getenv('DATABASE_URL')
+connect_db = psycopg2.pool.SimpleConnectionPool(1, 20, DATABASE_URL)
+
+
+@contextmanager
+def get_connection():
+    conn = None
+    try:
+        conn = connect_db.getconn()
+        yield conn
+        conn.commit()
+    except Exception as error:
+        conn.rollback()
+        raise Exception(f'Connection lost. Changes abort. {error}')
+    finally:
+        if conn:
+            connect_db.putconn(conn)
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -22,13 +43,14 @@ def main_page():
 
 @app.route('/urls')
 def list_page():
-    requirement = '''
-            SELECT urls.id, name, url_checks.created_at, status_code
-            FROM urls LEFT JOIN url_checks ON urls.id = url_checks.url_id
-            WHERE url_checks.id = (SELECT MAX(url_checks.id)
-            FROM url_checks WHERE url_checks.url_id = urls.id)
-            ORDER BY urls.id DESC'''
-    data = select_many_from_db(requirement, ())
+    with get_connection() as conn:
+        requirement = '''
+                SELECT urls.id, name, url_checks.created_at, status_code
+                FROM urls LEFT JOIN url_checks ON urls.id = url_checks.url_id
+                WHERE url_checks.id = (SELECT MAX(url_checks.id)
+                FROM url_checks WHERE url_checks.url_id = urls.id)
+                ORDER BY urls.id DESC'''
+        data = select_many_from_db(conn, requirement, ())
 
     return render_template('list_of_urls.html', data=data)
 
@@ -42,19 +64,20 @@ def post_urls():
         return render_template("index.html"), 422
 
     URL = url_normalize(URL)
-
-    requirement = 'SELECT id FROM urls WHERE name = %s;'
-    id = select_one_from_db(requirement, (URL,))
+    with get_connection() as conn:
+        requirement = 'SELECT id FROM urls WHERE name = %s;'
+        id = select_one_from_db(conn, requirement, (URL,))
 
     if id:
         flash('Страница уже существует', 'info')
         return redirect(url_for('link_page', id=id.id))
 
-    requirement = 'INSERT INTO urls (name, created_at) VALUES (%s, %s);'
-    insert_into_db(requirement, (URL, date.today()))
+    with get_connection() as conn:
+        requirement = 'INSERT INTO urls (name, created_at) VALUES (%s, %s);'
+        insert_into_db(conn, requirement, (URL, date.today()))
 
-    requirement = 'SELECT id FROM urls ORDER BY id DESC LIMIT 1;'
-    id = select_one_from_db(requirement, ()).id
+        requirement = 'SELECT id FROM urls ORDER BY id DESC LIMIT 1;'
+        id = select_one_from_db(conn, requirement, ()).id
 
     flash('Страница успешно добавлена', 'success') # NOQA E501
     return redirect(url_for('link_page', id=id))
@@ -62,13 +85,14 @@ def post_urls():
 
 @app.route('/urls/<id>')
 def link_page(id):
-    requirement = 'SELECT * FROM urls WHERE id = %s;'
-    data_about_url = select_many_from_db(requirement, (id,))
+    with get_connection() as conn:
+        requirement = 'SELECT * FROM urls WHERE id = %s;'
+        data_about_url = select_many_from_db(conn, requirement, (id,))
 
-    requirement = '''SELECT id, status_code, h1, title, description,
-                created_at FROM url_checks WHERE url_id = %s
-                ORDER BY id DESC;'''
-    data = select_many_from_db(requirement, (id,))
+        requirement = '''SELECT id, status_code, h1, title, description,
+                    created_at FROM url_checks WHERE url_id = %s
+                    ORDER BY id DESC;'''
+        data = select_many_from_db(conn, requirement, (id,))
 
     return render_template('link_page.html',
                            data_about_url=data_about_url,
@@ -78,22 +102,24 @@ def link_page(id):
 
 @app.post('/urls/<id>/check')
 def url_check(id):
-    requirement = 'SELECT name FROM urls WHERE id = %s;'
-    name = select_one_from_db(requirement, (id,)).name
+    with get_connection() as conn:
+        requirement = 'SELECT name FROM urls WHERE id = %s;'
+        name = select_one_from_db(conn, requirement, (id,)).name
 
     request = requests.get(name)
 
     if request.status_code == 200:
         flash('Страница успешно проверена', 'success') # NOQA E501
         status_code, h1, title, description = url_analyze(name)
-
-        requirement = '''INSERT INTO url_checks (url_id,
-            status_code, h1, title, description,
-            created_at) VALUES (%s, %s, %s, %s, %s, %s)'''
-        insert_into_db(
-            requirement,
-            (id, status_code, h1, title,
-             description, date.today()))
+        with get_connection() as conn:
+            requirement = '''INSERT INTO url_checks (url_id,
+                status_code, h1, title, description,
+                created_at) VALUES (%s, %s, %s, %s, %s, %s)'''
+            insert_into_db(
+                conn,
+                requirement,
+                (id, status_code, h1, title,
+                 description, date.today()))
 
         return redirect(url_for('link_page', id=id))
     else:
